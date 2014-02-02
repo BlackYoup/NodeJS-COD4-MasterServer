@@ -1,0 +1,29 @@
+{
+  "name": "COD4-MasterServer",
+  "version": "0.0.0",
+  "description": "A Cod4 MasterServer written in NodeJS",
+  "main": "server.js",
+  "dependencies": {
+    "colors": "~0.6.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LefebvreArnaud/NodeJS-COD4-MasterServer.git"
+  },
+  "keywords": [
+    "NodeJS",
+    "Javascript",
+    "COD4",
+    "MasterServer",
+    "Sockets"
+  ],
+  "author": "Lefebvre Arnaud",
+  "bugs": {
+    "url": "https://github.com/LefebvreArnaud/NodeJS-COD4-MasterServer/issues"
+  }
+}

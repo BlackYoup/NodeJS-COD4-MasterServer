@@ -25,10 +25,16 @@ exports.Server = function(rInfos){
 		var ret = '';
 		var splittedIP = ip.split('.');
 		for(var i = 0, j = splittedIP.length; i < j; i++){
-			ret += '' + parseInt(splittedIP[i]).toString(16);
+			var temp = parseInt(splittedIP[i]);
+			if(temp < 10){
+				ret += (0 + '' + temp.toString(16));
+			}
+			else{
+				ret += temp.toString(16);
+			}
 		}
 		ret += '' + parseInt(port).toString(16);
-		return new Buffer(ret);
+		return ret;
 	}
 
 	function init(){

@@ -36,7 +36,6 @@ exports.setServer = function(udp){
 
 exports.received = function(buffer, remote){
     var strBuffer = clean(buffer);
-    Debug('received ' + strBuffer + ' from ' + remote.address + ':' + remote.port);
 
     var all = {
         buffer: strBuffer,
@@ -52,7 +51,12 @@ exports.sendMessage = function(msgConfig, encoding){
 
     var buffer = msgConfig.buffer || new Buffer(header + msgConfig.message + ender, encoding);
     self.server.send(buffer, 0, buffer.length, msgConfig.port, msgConfig.address, function(){
-        Debug('Sent ' + msgConfig.message + ' at ' + msgConfig.address + ':' + msgConfig.port);
+        if(msgConfig.buffer){
+            Debug('Sent buffer ( ' + msgConfig.buffer + ' ) at ' + msgConfig.address + ':' + msgConfig.port);
+        }
+        else if(msgConfig.message){
+            Debug('Sent message ( ' + msgConfig.message +' ) at ' + msgConfig.address + ':' + msgConfig.port);
+        }
     });
 };
 
@@ -90,37 +94,38 @@ function statusResponse(status, rInfos){
 }
 
 function getServers(args, rInfos){
-    var tempBuff = new Array();
-    tempBuff.push(new Buffer('\xFF\xFF\xFF\xFFgetserversResponse\x00\x0a\x5c', 'binary'));
+    var allBuff = [];
+
+    allBuff.push(new Buffer('\xFF\xFF\xFF\xFFgetserversResponse\x0a\x00\x5c', 'binary'));
 
     for(var i = 0, j = allServers.length; i < j; i++){
-        tempBuff.push(allServers[i].ipConfigHex());
+        allBuff.push(new Buffer(allServers[i].ipConfigHex(), 'hex'));
+        allBuff.push(new Buffer('\x5c', 'binary'));
     }
 
-    var retBuffer = new Buffer(4096);
+    allBuff.push(new Buffer('\E\O\T', 'binary'));
 
-    Debug(retBuffer);
+    var totalBuff = Buffer.concat(allBuff);
+
     self.sendMessage({
-        buffer: retBuffer,
+        buffer: totalBuff,
         address: rInfos.address,
         port: rInfos.port
-    }, 'hex');
+    });
 }
 
 function createServer(rInfos){
-    if(!checkServer(rInfos)){
+    if(fetchServer(rInfos.address, rInfos.port) === false){
         allServers.push(new server.Server({
             address: rInfos.address,
             port: rInfos.port
         }));
         Debug('Server registered at ' + rInfos.address + ':' + rInfos.port);
+        Debug('Nbr of servers : ' + allServers.length);
     }
     else{
         Debug('Server already registered at ' + rInfos.address + ':' + rInfos.port)
     }
-}
-function checkServer(rInfos){
-    return fetchServer(rInfos.ip, rInfos.port);
 }
 
 function deleteServer(rInfos){

@@ -1,6 +1,6 @@
 {
   "name": "COD4-MasterServer",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A Cod4 MasterServer written in NodeJS",
   "main": "server.js",
   "dependencies": {

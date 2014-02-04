@@ -4,6 +4,7 @@ var server = require('./server');
 var self = exports;
 var debug = true;
 var allServers = [];
+var actualBuffer;
 
 exports.server;
 
@@ -44,20 +45,13 @@ exports.received = function(buffer, remote){
     router(all);
 };
 
-exports.sendMessage = function(msgConfig, encoding){
+exports.sendMessage = function(msgConfig){
     var header = msgConfig.header || '\xFF\xFF\xFF\xFF';
     var ender = msgConfig.ender || ' \x0a';
-    var encoding = encoding || 'binary';
+    var encoding = msgConfig.encoding || 'binary';
 
     var buffer = msgConfig.buffer || new Buffer(header + msgConfig.message + ender, encoding);
-    self.server.send(buffer, 0, buffer.length, msgConfig.port, msgConfig.address, function(){
-        if(msgConfig.buffer){
-            Debug('Sent buffer ( ' + msgConfig.buffer + ' ) at ' + msgConfig.address + ':' + msgConfig.port);
-        }
-        else if(msgConfig.message){
-            Debug('Sent message ( ' + msgConfig.message +' ) at ' + msgConfig.address + ':' + msgConfig.port);
-        }
-    });
+    self.server.send(buffer, 0, buffer.length, msgConfig.port, msgConfig.address, msgConfig.complete);
 };
 
 function router(infos){
@@ -77,23 +71,26 @@ function router(infos){
     }
 }
 
-function heartbeat(args, remote){
+function heartbeat(args, rInfos){
     if(args === 'COD-4'){
-        createServer(remote);
+        Debug('Received heartbeat from ' + rInfos.address + ':' + rInfos.port);
+        createServer(rInfos);
     }
     else if(args === 'flatline'){
-        deleteServer(remote);
+        Debug('Received flatline (quit) from ' + rInfos.address + ':' + rInfos.port);
+        deleteServer(rInfos);
     }
 }
 
 function statusResponse(status, rInfos){
+    Debug('Received status response from ' + rInfos.address + ':' + rInfos.port);
     var serverNumber = fetchServer(rInfos.address, rInfos.port);
     if(serverNumber !== false){
         allServers[serverNumber].setStatus(status);
     }
 }
 
-function getServers(args, rInfos){
+function updateBuffer(){
     var allBuff = [];
 
     allBuff.push(new Buffer('\xFF\xFF\xFF\xFFgetserversResponse\x0a\x00\x5c', 'binary'));
@@ -105,26 +102,33 @@ function getServers(args, rInfos){
 
     allBuff.push(new Buffer('\E\O\T', 'binary'));
 
-    var totalBuff = Buffer.concat(allBuff);
+    actualBuffer = Buffer.concat(allBuff);
+}
 
+function getServers(args, rInfos){
+    Debug('Received getservers command from ' + rInfos.address + ':' + rInfos.port);
     self.sendMessage({
-        buffer: totalBuff,
+        buffer: actualBuffer,
         address: rInfos.address,
-        port: rInfos.port
+        port: rInfos.port,
+        complete: function(){
+            Debug('Sent getserversResponse to ' + rInfos.address + ':' + rInfos.port);
+        }
     });
 }
 
 function createServer(rInfos){
-    if(fetchServer(rInfos.address, rInfos.port) === false){
+    var serverNumber = fetchServer(rInfos.address, rInfos.port);
+    if(serverNumber === false){
         allServers.push(new server.Server({
             address: rInfos.address,
             port: rInfos.port
         }));
+        updateBuffer();
         Debug('Server registered at ' + rInfos.address + ':' + rInfos.port);
-        Debug('Nbr of servers : ' + allServers.length);
     }
     else{
-        Debug('Server already registered at ' + rInfos.address + ':' + rInfos.port)
+        allServers[serverNumber].updateStatus();
     }
 }
 
@@ -132,6 +136,7 @@ function deleteServer(rInfos){
     var serverNumber = fetchServer(rInfos.address, rInfos.port);
     if(serverNumber !== false){
         allServers.splice(serverNumber, 1);
+        updateBuffer();
         Debug('Server deleted at ' + rInfos.address + ':' + rInfos.port);
     }
 }

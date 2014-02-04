@@ -4,6 +4,7 @@ exports.Server = function(rInfos){
 	var port = rInfos.port;
 	var challenge = new Date().getTime();
 	var myStatus = {};
+	var self = this;
 
 	this.getIP = function(){
 		return ip;
@@ -35,20 +36,28 @@ exports.Server = function(rInfos){
 		}
 		ret += '' + parseInt(port).toString(16);
 		return ret;
-	}
+	};
+	this.updateStatus = function(){
+		funcs.sendMessage({
+			address: ip,
+			port: port,
+			message: 'getstatus -' + challenge,
+			complete: function(){
+				funcs.Debug('Sent getstatus command to ' + rInfos.address + ':' + rInfos.port);
+			}
+		});
+	};
 
 	function init(){
 		funcs.sendMessage({
 			address: ip,
 			port: port,
-			message: 'getchallenge -' + challenge
+			message: 'getchallenge -' + challenge,
+			complete: function(){
+				funcs.Debug('Sent challenge to ' + rInfos.address + ':' + rInfos.port);
+			}
 		});
-		funcs.sendMessage({
-			address: ip,
-			port: port,
-			message: 'getstatus -' + challenge
-		});
+		self.updateStatus();
 	}
-
 	init();
 }

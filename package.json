@@ -2,14 +2,14 @@
   "name": "COD4-MasterServer",
   "version": "1.0.1",
   "description": "A Cod4 MasterServer written in NodeJS",
-  "main": "server.js",
+  "main": "app.js",
   "dependencies": {
     "colors": "~0.6.2"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
